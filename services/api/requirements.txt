@@ -1,0 +1,28 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-multipart>=0.0.18
+python-dotenv>=1.0.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+boto3>=1.35.0
+python-magic>=0.4.27
+Pillow>=11.0.0
+
+# Segmentation engine (SAM 2). torch/torchvision are large; a GPU is
+# recommended for video propagation but CPU works for images (slower).
+# The default model (facebook/sam2.1-hiera-tiny) auto-downloads weights from
+# the public HuggingFace Hub on first use — no API key required.
+torch>=2.5.1
+torchvision>=0.20.1
+# No PyPI wheel for sam2 yet — install from the official source repo:
+sam2 @ git+https://github.com/facebookresearch/sam2.git
+huggingface_hub>=0.26.0
+pycocotools>=2.0.7
+numpy>=1.26.0
+opencv-python-headless>=4.10.0  # video -> frames for propagation
+
+# Dev / quality
+ruff>=0.8.0
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
+httpx>=0.27.0
