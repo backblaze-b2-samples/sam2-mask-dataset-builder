@@ -122,6 +122,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Middleware order matters: Starlette runs the LAST-added middleware as the
+# OUTERMOST layer. CORSMiddleware must be added last so it wraps every
+# response — including the 500 produced by timing_middleware on an unhandled
+# error. Otherwise that error response escapes without CORS headers and the
+# browser reports a misleading "Network error" instead of the real 500.
+
+# Request ID + timing middleware (inner layer)
+app.add_middleware(BaseHTTPMiddleware, dispatch=metrics.timing_middleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -132,9 +141,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
 )
-
-# Request ID + timing middleware
-app.add_middleware(BaseHTTPMiddleware, dispatch=metrics.timing_middleware)
 
 app.include_router(health.router, tags=["health"])
 app.include_router(upload.router, tags=["upload"])

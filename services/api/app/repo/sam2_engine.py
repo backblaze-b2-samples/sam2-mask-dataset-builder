@@ -27,30 +27,40 @@ logger = logging.getLogger(__name__)
 PromptDict = dict
 
 
+def _best_device() -> str:
+    """Pick the best available torch device: cuda -> mps -> cpu.
+
+    SAM 2's build_sam2 defaults to device="cuda" and moves the model during
+    construction, so the device must be passed into from_pretrained(...) — a
+    post-construction .to() runs too late and crashes on CUDA-less builds.
+    """
+    import torch
+
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 @lru_cache(maxsize=1)
 def _image_predictor():
     """Build (and cache) the SAM 2 image predictor. Heavy: loads weights."""
-    import torch
     from sam2.sam2_image_predictor import SAM2ImagePredictor
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = _best_device()
     logger.info("Loading SAM 2 image model %s on %s", settings.sam2_model_id, device)
-    predictor = SAM2ImagePredictor.from_pretrained(settings.sam2_model_id)
-    predictor.model.to(device)
-    return predictor
+    return SAM2ImagePredictor.from_pretrained(settings.sam2_model_id, device=device)
 
 
 @lru_cache(maxsize=1)
 def _video_predictor():
     """Build (and cache) the SAM 2 video predictor. Heavy: loads weights."""
-    import torch
     from sam2.sam2_video_predictor import SAM2VideoPredictor
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = _best_device()
     logger.info("Loading SAM 2 video model %s on %s", settings.sam2_model_id, device)
-    predictor = SAM2VideoPredictor.from_pretrained(settings.sam2_model_id)
-    predictor.model.to(device)
-    return predictor
+    return SAM2VideoPredictor.from_pretrained(settings.sam2_model_id, device=device)
 
 
 def _decode_image(image_bytes: bytes) -> np.ndarray:

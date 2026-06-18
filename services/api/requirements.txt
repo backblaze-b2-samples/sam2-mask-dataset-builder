@@ -14,8 +14,11 @@ Pillow>=11.0.0
 # the public HuggingFace Hub on first use — no API key required.
 torch>=2.5.1
 torchvision>=0.20.1
-# No PyPI wheel for sam2 yet — install from the official source repo:
-sam2 @ git+https://github.com/facebookresearch/sam2.git
+# No PyPI wheel for sam2 yet — install from the official source repo. The
+# project name in upstream metadata is "sam-2" (not "sam2"); modern pip
+# enforces that a named direct URL matches the package metadata, so the
+# requirement must be spelled "sam-2" or the install aborts.
+sam-2 @ git+https://github.com/facebookresearch/sam2.git
 huggingface_hub>=0.26.0
 pycocotools>=2.0.7
 numpy>=1.26.0
