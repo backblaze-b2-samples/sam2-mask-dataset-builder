@@ -16,8 +16,9 @@ a scoped explorer for browsing and downloading those artifacts.
 - `services/api/app/service/datasets.py` — `list_runs()`, `get_dataset_summary()`, `list_dataset_files()` (all scoped to `DATASET_PREFIX`)
 - `services/api/app/runtime/datasets.py` — HTTP handlers
 - `apps/web/src/components/dataset/dataset-explorer.tsx` — runs list + footprint
-- `apps/web/src/components/dataset/run-card.tsx` — per-run inline previews + artifacts + presigned downloads
-- `apps/web/src/components/dataset/run-preview.tsx` — `RunPreview` (source + tinted mask overlay composite, image runs) and `PreviewImage` (per-object cut-out/mask thumbnail), both via `usePreviewUrl`
+- `apps/web/src/components/dataset/run-card.tsx` — per-run inline previews + artifacts + presigned downloads; the composite preview and every per-object thumbnail are clickable buttons that open the lightbox
+- `apps/web/src/components/dataset/run-preview.tsx` — `RunPreview` (source + high-contrast mask composite, image runs), `MaskComposite` (the shared spotlight + tint overlay stack), and `PreviewImage` (per-object cut-out/mask thumbnail), all via `usePreviewUrl`
+- `apps/web/src/components/dataset/run-lightbox.tsx` — `RunLightbox` click-to-expand dialog: a large composite view (source + the same mask overlay) or a single enlarged asset (cut-out / mask PNG), reusing the shadcn `Dialog`
 - `apps/web/src/components/dataset/footprint-card.tsx` — raw-vs-derived storage growth
 
 ## Canonical Files
@@ -53,6 +54,8 @@ under `DATASET_PREFIX`.
 ## Flow
 - A Studio run encodes each object's mask to RLE + PNG (+ cut-out for images) and uploads them, then writes `run.json`
 - `/dataset` lists runs (scoped) and shows the footprint card. Expanding a run renders inline visual previews via presigned preview URLs — for image runs, the source with its mask PNGs composited on top (mirrors the Studio canvas); for every run, a per-object cut-out thumbnail (falling back to the mask silhouette when no cut-out was written) — alongside presigned download buttons for its `run.json`, source, RLE, mask PNGs, and cut-outs. Preview URLs are only fetched while a run is expanded.
+- **High-contrast mask composite.** The source + mask overlay uses the same two-pass treatment as the Studio canvas. The mask PNG is grayscale ("L": white = inside the segment, black = outside). Pass 1 — **spotlight**, rendered only when a run has exactly one mask instance: the mask drawn with `mix-blend-mode: multiply` at `opacity 0.55`, so white stays neutral (the object keeps full brightness) and black darkens (the background dims). Pass 2 — **tint**, one per instance: the mask drawn with `mix-blend-mode: screen` at `opacity 0.85` and a teal hue-rotate filter, painting each segment a distinct brand color. The spotlight + tint stack lives in `MaskComposite` (`run-preview.tsx`) and is reused verbatim by the lightbox.
+- **Click-to-expand lightbox.** In an expanded run, the composite preview and each per-object thumbnail are keyboard-accessible `<button>`s (with `cursor-pointer`) that open a shadcn `Dialog` (`run-lightbox.tsx`). Clicking the composite shows a large view (up to ~85vh) of the source with the identical spotlight/tint overlay; clicking a thumbnail shows that single cut-out or mask PNG enlarged. Lightbox preview URLs are only fetched while the dialog is open.
 - The footprint card aggregates `SOURCE_PREFIX` vs `DATASET_PREFIX` byte totals — the headline "raw archive becomes a labeled dataset" metric
 
 ## Edge Cases
@@ -63,7 +66,8 @@ under `DATASET_PREFIX`.
 
 ## UX States
 - Empty: "No runs yet" with a link to the Studio
-- Loading: skeleton rows / metric skeletons; per-image skeletons while preview URLs load, with an image-off placeholder if a preview can't be resolved
+- Loading: skeleton rows / metric skeletons; per-image skeletons while preview URLs load, with an image-off placeholder if a preview can't be resolved (the lightbox shows the same skeleton / image-off states)
+- Expanded run: the composite preview and per-object thumbnails are clickable (`cursor-pointer`, focusable buttons) and open the larger lightbox view
 - Video runs: no source composite (the source isn't a single still frame) — a short note plus per-object cut-out thumbnails are shown instead
 - Error: inline `ErrorState` with retry
 

@@ -41,7 +41,7 @@ boolean masks per object.
 - User selects a mode (include point / exclude point / box). In point modes a **click** places a marker; in **box** mode a **click-drag** rubber-bands a rectangle (live preview while dragging, committed on release). All coordinates are mapped to image pixels and clamped to the image bounds. Pointer capture is used so a drag that leaves the image still commits, and the native browser image-drag is disabled. A bare click in box mode (no drag) is ignored, so it never commits a zero-size box.
 - "Segment & save" POSTs `{ source_key, objects }` to `/segment/image`
 - API downloads the source bytes from B2 (repo), runs `sam2_engine.segment_image` locally, encodes masks, writes artifacts + `run.json` to B2, returns the typed run
-- The UI overlays the returned mask PNGs (presigned) over the source and links to the dataset explorer
+- The UI overlays the returned mask PNGs (presigned) over the source — a `multiply` pass dims the background (everything outside a single mask) and a `screen` pass tints the segmented region a vivid color, so the selection stands out clearly from what was left out — and links to the dataset explorer
 - **Video**: the page calls `/segment/video`; SAM 2 propagates the prompt frame's masks across frames. Heavier — GPU recommended. The UI surfaces the prompt frame's masks as a preview.
 
 ## The model

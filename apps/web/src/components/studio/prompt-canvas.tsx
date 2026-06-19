@@ -146,7 +146,26 @@ export function PromptCanvas({
           setDims({ w: t.naturalWidth, h: t.naturalHeight });
         }}
       />
-      {/* Returned mask overlays — semi-transparent, stacked over the image. */}
+      {/* Returned mask overlays. The mask PNG is grayscale (white inside the
+          segment, black outside), so two blended passes make the selection
+          stand out clearly against what was left out:
+          1. Spotlight — `multiply` keeps the inside untouched (white = neutral)
+             and darkens the background (black = darken), dimming everything
+             OUTSIDE the mask. Only meaningful for a single object; with several
+             masks each would dim the others, so it's gated on a lone mask. */}
+      {maskUrls.length === 1 && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={maskUrls[0]}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full rounded-lg"
+          style={{ mixBlendMode: "multiply", opacity: 0.55 }}
+        />
+      )}
+      {/* 2. Tint — `screen` lifts the inside toward a vivid color (black stays
+            neutral, so the dimmed background is untouched). The result: the
+            mask glows over a darkened backdrop. */}
       {maskUrls.map((url, i) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -154,8 +173,13 @@ export function PromptCanvas({
           src={url}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full rounded-lg mix-blend-screen opacity-60"
-          style={{ filter: "invert(31%) sepia(98%) saturate(1200%) hue-rotate(190deg)" }}
+          className="pointer-events-none absolute inset-0 h-full w-full rounded-lg"
+          style={{
+            mixBlendMode: "screen",
+            opacity: 0.85,
+            filter:
+              "invert(31%) sepia(98%) saturate(1800%) hue-rotate(140deg) brightness(1.1)",
+          }}
         />
       ))}
       <svg

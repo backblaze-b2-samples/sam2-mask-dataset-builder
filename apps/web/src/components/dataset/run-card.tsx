@@ -10,6 +10,7 @@ import { ApiError, getDownloadUrl } from "@/lib/api-client";
 import { formatDate } from "@/lib/utils";
 import type { SegmentationRun } from "@sam2-mask-dataset-builder/shared";
 import { PreviewImage, RunPreview, instancesOf } from "./run-preview";
+import { RunLightbox, type LightboxTarget } from "./run-lightbox";
 
 async function download(key: string) {
   try {
@@ -23,6 +24,7 @@ async function download(key: string) {
 
 export function RunCard({ run }: { run: SegmentationRun }) {
   const [open, setOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<LightboxTarget | null>(null);
   const instances = instancesOf(run);
 
   return (
@@ -62,7 +64,16 @@ export function RunCard({ run }: { run: SegmentationRun }) {
         {open && (
           <div className="border-t border-border px-5 py-4 space-y-3">
             {run.kind === "image" ? (
-              <RunPreview run={run} enabled={open} />
+              <button
+                type="button"
+                className="block w-full cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`Expand preview for ${run.run_id}`}
+                onClick={() =>
+                  setLightbox({ kind: "composite", run, instances })
+                }
+              >
+                <RunPreview run={run} enabled={open} />
+              </button>
             ) : (
               <p className="text-xs text-muted-foreground">
                 Video run — per-object cut-outs from the prompt frame are shown
@@ -102,14 +113,26 @@ export function RunCard({ run }: { run: SegmentationRun }) {
                     </span>
                   </div>
                   {/* Cut-out shows the object on transparent bg; fall back to
-                      the mask silhouette when no cut-out was written. */}
-                  <div className="h-28 w-full overflow-hidden rounded bg-muted/30">
+                      the mask silhouette when no cut-out was written. Click to
+                      open the asset large in the lightbox. */}
+                  <button
+                    type="button"
+                    className="block h-28 w-full cursor-pointer overflow-hidden rounded bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={`Expand object ${m.object_id} preview`}
+                    onClick={() =>
+                      setLightbox({
+                        kind: "single",
+                        assetKey: m.cutout_png_key ?? m.mask_png_key,
+                        title: `Object ${m.object_id} · ${run.run_id}`,
+                      })
+                    }
+                  >
                     <PreviewImage
                       assetKey={m.cutout_png_key ?? m.mask_png_key}
                       enabled={open}
                       alt={`Object ${m.object_id} preview`}
                     />
-                  </div>
+                  </button>
                   <div className="flex flex-wrap gap-1.5">
                     <Button
                       variant="ghost"
@@ -147,6 +170,13 @@ export function RunCard({ run }: { run: SegmentationRun }) {
           </div>
         )}
       </CardContent>
+      <RunLightbox
+        target={lightbox}
+        open={lightbox !== null}
+        onOpenChange={(o) => {
+          if (!o) setLightbox(null);
+        }}
+      />
     </Card>
   );
 }
