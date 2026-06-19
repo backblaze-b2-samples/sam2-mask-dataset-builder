@@ -35,10 +35,6 @@ Turn a raw media archive on **[Backblaze B2](https://www.backblaze.com/sign-up/a
 
 ![An expanded dataset run showing the mask composite, object cut-out, and artifact download buttons](docs/images/dataset-run-expanded.png)
 
-**Run detail** — expand a run's composite into a full-size view of the source image with its mask overlay.
-
-![Lightbox detail view of a run's source image with the SAM 2 mask overlaid](docs/images/dataset-detail.png)
-
 ## How it works
 
 ```
