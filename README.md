@@ -13,6 +13,32 @@ Turn a raw media archive on **[Backblaze B2](https://www.backblaze.com/sign-up/a
 - A **footprint dashboard** showing raw-vs-derived storage growth
 - FastAPI backend with strict layered architecture and structural tests; agent-optimized docs
 
+## What it looks like
+
+**Dashboard** — segmentation-run, mask, and cut-out counts with a raw-vs-derived storage footprint showing how the dataset grows past the originals on B2.
+
+![Dashboard with run, mask, and cut-out metrics and a raw-vs-derived footprint card](docs/images/dashboard.png)
+
+**Ingest** — drag-and-drop images and video clips into the B2 `raw/` archive (up to 500 MB per file).
+
+![Ingest page with a drag-and-drop upload zone for source media](docs/images/upload.png)
+
+**Studio** — pick a source, drop include/exclude points (and a box), and run local SAM 2 to preview the predicted mask before saving the run to B2.
+
+![Segmentation Studio showing include points on a source image and the predicted SAM 2 mask overlay](docs/images/studio.png)
+
+**Dataset** — a scoped explorer of derived runs under the dataset prefix, with the storage footprint and per-run mask counts.
+
+![Dataset explorer listing derived segmentation runs scoped to the dataset prefix](docs/images/dataset.png)
+
+**Dataset run (expanded)** — open a run to see its source-plus-mask composite, per-object cut-outs, and one-click downloads for the RLE JSON, mask PNG, and cut-out.
+
+![An expanded dataset run showing the mask composite, object cut-out, and artifact download buttons](docs/images/dataset-run-expanded.png)
+
+**Run detail** — expand a run's composite into a full-size view of the source image with its mask overlay.
+
+![Lightbox detail view of a run's source image with the SAM 2 mask overlaid](docs/images/dataset-detail.png)
+
 ## How it works
 
 ```
