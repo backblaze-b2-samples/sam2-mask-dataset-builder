@@ -1,4 +1,4 @@
-<!-- last_verified: 2026-06-18 -->
+<!-- last_verified: 2026-06-19 -->
 # Feature: Mask Dataset
 
 ## Purpose
@@ -8,7 +8,7 @@ a scoped explorer for browsing and downloading those artifacts.
 
 ## Used By
 - UI: `/dataset` page, `apps/web/src/components/dataset/*`
-- API: `GET /runs`, `GET /dataset/summary`, `GET /dataset/files`, plus `GET /files/{key}/download` for presigned artifact downloads
+- API: `GET /runs`, `GET /dataset/summary`, `GET /dataset/files`, plus `GET /files/{key}/download` for presigned artifact downloads and `GET /files/{key}/preview` for inline previews (does not increment the download counter)
 
 ## Core Functions
 - `services/api/app/service/segmentation.py` — writes artifacts + `run.json` per run
@@ -16,7 +16,8 @@ a scoped explorer for browsing and downloading those artifacts.
 - `services/api/app/service/datasets.py` — `list_runs()`, `get_dataset_summary()`, `list_dataset_files()` (all scoped to `DATASET_PREFIX`)
 - `services/api/app/runtime/datasets.py` — HTTP handlers
 - `apps/web/src/components/dataset/dataset-explorer.tsx` — runs list + footprint
-- `apps/web/src/components/dataset/run-card.tsx` — per-run artifacts + presigned downloads
+- `apps/web/src/components/dataset/run-card.tsx` — per-run inline previews + artifacts + presigned downloads
+- `apps/web/src/components/dataset/run-preview.tsx` — `RunPreview` (source + tinted mask overlay composite, image runs) and `PreviewImage` (per-object cut-out/mask thumbnail), both via `usePreviewUrl`
 - `apps/web/src/components/dataset/footprint-card.tsx` — raw-vs-derived storage growth
 
 ## Canonical Files
@@ -51,7 +52,7 @@ under `DATASET_PREFIX`.
 
 ## Flow
 - A Studio run encodes each object's mask to RLE + PNG (+ cut-out for images) and uploads them, then writes `run.json`
-- `/dataset` lists runs (scoped), shows the footprint card, and lets the user expand a run to download its `run.json`, source, RLE, mask PNGs, and cut-outs via presigned URLs
+- `/dataset` lists runs (scoped) and shows the footprint card. Expanding a run renders inline visual previews via presigned preview URLs — for image runs, the source with its mask PNGs composited on top (mirrors the Studio canvas); for every run, a per-object cut-out thumbnail (falling back to the mask silhouette when no cut-out was written) — alongside presigned download buttons for its `run.json`, source, RLE, mask PNGs, and cut-outs. Preview URLs are only fetched while a run is expanded.
 - The footprint card aggregates `SOURCE_PREFIX` vs `DATASET_PREFIX` byte totals — the headline "raw archive becomes a labeled dataset" metric
 
 ## Edge Cases
@@ -62,7 +63,8 @@ under `DATASET_PREFIX`.
 
 ## UX States
 - Empty: "No runs yet" with a link to the Studio
-- Loading: skeleton rows / metric skeletons
+- Loading: skeleton rows / metric skeletons; per-image skeletons while preview URLs load, with an image-off placeholder if a preview can't be resolved
+- Video runs: no source composite (the source isn't a single still frame) — a short note plus per-object cut-out thumbnails are shown instead
 - Error: inline `ErrorState` with retry
 
 ## Verification

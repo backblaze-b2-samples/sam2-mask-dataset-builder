@@ -8,13 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ApiError, getDownloadUrl } from "@/lib/api-client";
 import { formatDate } from "@/lib/utils";
-import type { MaskInstance, SegmentationRun } from "@sam2-mask-dataset-builder/shared";
-
-function instancesOf(run: SegmentationRun): MaskInstance[] {
-  if (run.instances.length > 0) return run.instances;
-  // Video: surface the prompt frame's instances as the representative set.
-  return run.frames[0]?.instances ?? [];
-}
+import type { SegmentationRun } from "@sam2-mask-dataset-builder/shared";
+import { PreviewImage, RunPreview, instancesOf } from "./run-preview";
 
 async function download(key: string) {
   try {
@@ -66,6 +61,14 @@ export function RunCard({ run }: { run: SegmentationRun }) {
 
         {open && (
           <div className="border-t border-border px-5 py-4 space-y-3">
+            {run.kind === "image" ? (
+              <RunPreview run={run} enabled={open} />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Video run — per-object cut-outs from the prompt frame are shown
+                below.
+              </p>
+            )}
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
@@ -97,6 +100,15 @@ export function RunCard({ run }: { run: SegmentationRun }) {
                     <span className="font-mono text-muted-foreground">
                       {m.area_px.toLocaleString()} px
                     </span>
+                  </div>
+                  {/* Cut-out shows the object on transparent bg; fall back to
+                      the mask silhouette when no cut-out was written. */}
+                  <div className="h-28 w-full overflow-hidden rounded bg-muted/30">
+                    <PreviewImage
+                      assetKey={m.cutout_png_key ?? m.mask_png_key}
+                      enabled={open}
+                      alt={`Object ${m.object_id} preview`}
+                    />
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <Button

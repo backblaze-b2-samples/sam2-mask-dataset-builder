@@ -1,4 +1,4 @@
-<!-- last_verified: 2026-06-18 -->
+<!-- last_verified: 2026-06-19 -->
 # Feature: Segmentation Studio
 
 ## Purpose
@@ -12,7 +12,7 @@ boolean masks per object.
 
 ## Core Functions
 - `apps/web/src/components/studio/segmentation-studio.tsx` — orchestrates source pick + prompts + run
-- `apps/web/src/components/studio/prompt-canvas.tsx` — click/box overlay in image-pixel coordinates, mask overlays
+- `apps/web/src/components/studio/prompt-canvas.tsx` — click (points) / drag (box) overlay in image-pixel coordinates, mask overlays
 - `apps/web/src/components/studio/source-picker.tsx` — lists the `raw/` ingest archive
 - `apps/web/src/lib/api-client.ts` — `segmentImage()`, `segmentVideo()`, `getRun()`
 - `apps/web/src/lib/queries.ts` — `useSegmentImage()`, `useSegmentVideo()`, `useRun()`
@@ -38,7 +38,7 @@ boolean masks per object.
 
 ## Flow
 - User picks a source image from the `raw/` picker; the page fetches a presigned preview URL
-- User selects a mode (include point / exclude point / box) and clicks on the image; clicks are mapped to image-pixel coordinates
+- User selects a mode (include point / exclude point / box). In point modes a **click** places a marker; in **box** mode a **click-drag** rubber-bands a rectangle (live preview while dragging, committed on release). All coordinates are mapped to image pixels and clamped to the image bounds. Pointer capture is used so a drag that leaves the image still commits, and the native browser image-drag is disabled. A bare click in box mode (no drag) is ignored, so it never commits a zero-size box.
 - "Segment & save" POSTs `{ source_key, objects }` to `/segment/image`
 - API downloads the source bytes from B2 (repo), runs `sam2_engine.segment_image` locally, encodes masks, writes artifacts + `run.json` to B2, returns the typed run
 - The UI overlays the returned mask PNGs (presigned) over the source and links to the dataset explorer

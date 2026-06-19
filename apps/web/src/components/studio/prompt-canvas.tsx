@@ -17,18 +17,22 @@ interface PromptCanvasProps {
   onSetBox: (b: BoxPrompt) => void;
 }
 
-// Maps a mouse event to image-pixel coordinates, accounting for the rendered
-// (CSS) size vs the natural image size. SAM 2 prompts are in image pixels.
+// Maps a pointer event to image-pixel coordinates, accounting for the rendered
+// (CSS) size vs the natural image size. SAM 2 prompts are in image pixels, and
+// we clamp to the image bounds so a drag that leaves the image still yields a
+// valid in-bounds box.
 function toImageCoords(
-  e: React.MouseEvent,
+  e: { clientX: number; clientY: number },
   img: HTMLImageElement,
 ): { x: number; y: number } {
   const rect = img.getBoundingClientRect();
   const scaleX = img.naturalWidth / rect.width;
   const scaleY = img.naturalHeight / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
   return {
-    x: (e.clientX - rect.left) * scaleX,
-    y: (e.clientY - rect.top) * scaleY,
+    x: Math.max(0, Math.min(img.naturalWidth, x)),
+    y: Math.max(0, Math.min(img.naturalHeight, y)),
   };
 }
 
@@ -43,31 +47,58 @@ export function PromptCanvas({
   onSetBox,
 }: PromptCanvasProps) {
   const imgRef = useRef<HTMLImageElement>(null);
+  // Live drag state for box mode: start + current corner in image pixels.
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [dragCurrent, setDragCurrent] = useState<{ x: number; y: number } | null>(null);
   const [dims, setDims] = useState<{ w: number; h: number }>({ w: 1, h: 1 });
 
   const handleClick = (e: React.MouseEvent) => {
+    // Points are placed on click; box mode is handled by the pointer drag below.
     if (!imgRef.current || mode === "box") return;
     const { x, y } = toImageCoords(e, imgRef.current);
     onAddPoint({ type: "point", x, y, label: mode === "foreground" ? 1 : 0 });
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (!imgRef.current || mode !== "box") return;
-    setDragStart(toImageCoords(e, imgRef.current));
+    // Prevent the browser's native image drag (ghost image) and text selection,
+    // then capture the pointer so move/up keep firing even outside the image.
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const p = toImageCoords(e, imgRef.current);
+    setDragStart(p);
+    setDragCurrent(p);
   };
 
-  const handleMouseUp = (e: React.MouseEvent) => {
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (!imgRef.current || mode !== "box" || !dragStart) return;
+    setDragCurrent(toImageCoords(e, imgRef.current));
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!imgRef.current || mode !== "box" || !dragStart) {
+      setDragStart(null);
+      setDragCurrent(null);
+      return;
+    }
     const end = toImageCoords(e, imgRef.current);
-    onSetBox({
-      type: "box",
-      x0: Math.min(dragStart.x, end.x),
-      y0: Math.min(dragStart.y, end.y),
-      x1: Math.max(dragStart.x, end.x),
-      y1: Math.max(dragStart.y, end.y),
-    });
+    // Ignore accidental clicks / tiny drags so a single click doesn't commit a
+    // zero-size box. Threshold scales with the image so it's resolution-independent.
+    const minSize = Math.max(dims.w, dims.h) * 0.01;
+    if (
+      Math.abs(end.x - dragStart.x) >= minSize &&
+      Math.abs(end.y - dragStart.y) >= minSize
+    ) {
+      onSetBox({
+        type: "box",
+        x0: Math.min(dragStart.x, end.x),
+        y0: Math.min(dragStart.y, end.y),
+        x1: Math.max(dragStart.x, end.x),
+        y1: Math.max(dragStart.y, end.y),
+      });
+    }
     setDragStart(null);
+    setDragCurrent(null);
   };
 
   if (loading) {
@@ -82,6 +113,17 @@ export function PromptCanvas({
     );
   }
 
+  // Rubber-band preview while dragging a box, in image natural coordinates.
+  const preview =
+    dragStart && dragCurrent
+      ? {
+          x: Math.min(dragStart.x, dragCurrent.x),
+          y: Math.min(dragStart.y, dragCurrent.y),
+          w: Math.abs(dragCurrent.x - dragStart.x),
+          h: Math.abs(dragCurrent.y - dragStart.y),
+        }
+      : null;
+
   // SVG overlay uses the image's natural coordinate system via viewBox, so
   // prompt markers stay aligned regardless of the rendered size.
   return (
@@ -91,12 +133,14 @@ export function PromptCanvas({
         ref={imgRef}
         src={imageUrl}
         alt="Segmentation source"
+        draggable={false}
         className={`max-h-[60vh] w-auto max-w-full rounded-lg ${
           mode === "box" ? "cursor-crosshair" : "cursor-pointer"
         }`}
         onClick={handleClick}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
         onLoad={(e) => {
           const t = e.currentTarget;
           setDims({ w: t.naturalWidth, h: t.naturalHeight });
@@ -119,7 +163,7 @@ export function PromptCanvas({
         viewBox={`0 0 ${dims.w} ${dims.h}`}
         preserveAspectRatio="none"
       >
-        {box && (
+        {box && !preview && (
           <rect
             x={box.x0}
             y={box.y0}
@@ -127,6 +171,19 @@ export function PromptCanvas({
             height={box.y1 - box.y0}
             fill="none"
             stroke="var(--primary)"
+            strokeWidth={Math.max(dims.w, dims.h) / 250}
+          />
+        )}
+        {preview && (
+          <rect
+            x={preview.x}
+            y={preview.y}
+            width={preview.w}
+            height={preview.h}
+            fill="var(--primary)"
+            fillOpacity={0.12}
+            stroke="var(--primary)"
+            strokeDasharray={`${Math.max(dims.w, dims.h) / 100}`}
             strokeWidth={Math.max(dims.w, dims.h) / 250}
           />
         )}
