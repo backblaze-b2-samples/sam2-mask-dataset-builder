@@ -33,7 +33,7 @@ assertWorkflow(
 
 assertWorkflow(
   !/(^|\n)\s+cache:\s*["']?pnpm["']?\s*(?:#.*)?(?:\n|$)/.test(workflow),
-  "setup-node must not restore pnpm cache before pnpm is available",
+  "workflow must not use cache: pnpm while PR CI relies on Corepack",
 );
 
 assertWorkflow(

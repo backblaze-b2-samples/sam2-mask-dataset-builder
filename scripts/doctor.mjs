@@ -76,7 +76,7 @@ function parseSemver(s) {
 function getPinnedPnpmVersion() {
   const pkg = JSON.parse(readFileSync(PACKAGE_FILE, "utf8"));
   const match = pkg.packageManager?.match(/^pnpm@([^+]+)/);
-  return match?.[1] ?? "10.25.0";
+  return match?.[1] ?? pkg.engines?.pnpm ?? "10.25.0";
 }
 
 function sameSemver(actual, expected) {
@@ -111,7 +111,7 @@ function checkPnpm() {
   if (!v || !required || !sameSemver(v, required)) {
     fail(
       `pnpm ${out} does not match the pinned version ${REQUIRED_PNPM_VERSION}`,
-      "Run: `corepack enable` from the repo root, then rerun the command",
+      `Run: \`corepack enable && corepack prepare pnpm@${REQUIRED_PNPM_VERSION} --activate\` from the repo root, then rerun the command`,
     );
   }
 }
