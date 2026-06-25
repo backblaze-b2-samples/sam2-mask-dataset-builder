@@ -1,4 +1,4 @@
-<!-- last_verified: 2026-06-18 -->
+<!-- last_verified: 2026-06-25 -->
 # Dev Workflows
 
 Engineering workflows for this repo.
@@ -63,6 +63,14 @@ test that loads real weights or hits a live bucket.
 - [ ] Run full lint + test suite before submitting
 - [ ] Docs updated in the same PR as code changes
 - [ ] Only change files relevant to the task — no drive-by improvements
+
+## CI
+
+GitHub Actions enables Corepack, uses the root `packageManager` pin, installs
+frontend dependencies from the repository root with `pnpm install
+--frozen-lockfile`, then runs the root `pnpm typecheck` script. Do not switch CI
+to `npm install` inside `apps/web/`; the web app depends on the workspace
+package via `workspace:*`, which npm does not resolve.
 
 ## Testing
 

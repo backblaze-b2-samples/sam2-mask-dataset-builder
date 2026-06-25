@@ -1,6 +1,7 @@
 {
   "name": "sam2-mask-dataset-builder",
   "private": true,
+  "packageManager": "pnpm@10.25.0",
   "scripts": {
     "doctor": "node scripts/doctor.mjs",
     "predev": "node scripts/doctor.mjs",
