@@ -1,4 +1,4 @@
-<!-- last_verified: 2026-06-18 -->
+<!-- last_verified: 2026-06-25 -->
 # Dev Workflows
 
 Engineering workflows for this repo.
@@ -63,6 +63,23 @@ test that loads real weights or hits a live bucket.
 - [ ] Run full lint + test suite before submitting
 - [ ] Docs updated in the same PR as code changes
 - [ ] Only change files relevant to the task — no drive-by improvements
+
+## CI
+
+GitHub Actions enables Corepack, uses the root `packageManager` pin with its
+Corepack integrity hash, installs frontend dependencies from the repository root
+with `pnpm install --frozen-lockfile --ignore-scripts`, then runs the root
+`pnpm typecheck` script. The workflow sets `permissions: contents: read`, checks
+out with `persist-credentials: false`, and intentionally leaves pnpm caching
+disabled so the first pnpm-dependent command is the install step. Do not switch
+CI to `npm install` inside `apps/web/`; the web app depends on the workspace
+package via `workspace:*`, which npm does not resolve.
+
+The workflow runs its security check inline before dependency installation so it
+does not depend on PR-modified helper scripts. Run `pnpm lint:ci` after editing
+the workflow for the same local checks: it fails if checkout credentials are
+persisted, install scripts are allowed during dependency installation, or pnpm
+cache restoration is reintroduced.
 
 ## Testing
 

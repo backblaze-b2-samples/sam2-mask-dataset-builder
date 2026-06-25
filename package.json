@@ -1,6 +1,7 @@
 {
   "name": "sam2-mask-dataset-builder",
   "private": true,
+  "packageManager": "pnpm@10.25.0+sha512.5e82639027af37cf832061bcc6d639c219634488e0f2baebe785028a793de7b525ffcd3f7ff574f5e9860654e098fe852ba8ac5dd5cefe1767d23a020a92f501",
   "scripts": {
     "doctor": "node scripts/doctor.mjs",
     "predev": "node scripts/doctor.mjs",
@@ -10,6 +11,7 @@
     "build": "pnpm --filter @sam2-mask-dataset-builder/web build",
     "typecheck": "pnpm --filter @sam2-mask-dataset-builder/web typecheck",
     "lint": "pnpm --filter @sam2-mask-dataset-builder/web lint",
+    "lint:ci": "node scripts/check-ci-security.mjs",
     "lint:api": "cd services/api && .venv/bin/ruff check .",
     "test:api": "cd services/api && .venv/bin/python -m pytest",
     "check:structure": "cd services/api && .venv/bin/python -m pytest tests/test_structure.py -v",
@@ -20,6 +22,6 @@
   },
   "engines": {
     "node": ">=20",
-    "pnpm": ">=9"
+    "pnpm": "10.25.0"
   }
 }

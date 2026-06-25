@@ -1,4 +1,4 @@
-<!-- last_verified: 2026-06-18 -->
+<!-- last_verified: 2026-06-25 -->
 # SAM 2 Mask Dataset Builder
 
 Turn a raw media archive on **[Backblaze B2](https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-sam2-mask-builder)** into a reusable, versioned **segmentation dataset** — with no second API key. Source images and video clips live in B2. A lightweight studio lets you drop **click and box prompts** on an image (or the first frame of a clip); **Meta's Segment Anything 2 (SAM 2) runs locally**, predicting masks per prompt and propagating them across video frames. Every run writes its derived artifacts — COCO **RLE JSON**, **binary mask PNGs**, transparent **cut-out instances**, and per-run/per-frame **metadata** — back to B2 alongside the source. Downstream training pipelines and reviewers read the result straight off B2 via presigned URLs.
@@ -55,11 +55,12 @@ images / clips   ──▶   click & box prompts   ──▶   RLE JSON         
 
 ## Quick Start
 
-You need: Node.js >= 20, pnpm >= 9, Python >= 3.11, and a free **[Backblaze B2 account](https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-sam2-mask-builder)**.
+You need: Node.js >= 20, pnpm 10.25.0 via Corepack, Python >= 3.11, and a free **[Backblaze B2 account](https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campaign=ai_artifacts&utm_content=b2ai-sam2-mask-builder)**.
 
 **1. Install dependencies**
 
 ```bash
+corepack enable
 pnpm install
 ```
 
