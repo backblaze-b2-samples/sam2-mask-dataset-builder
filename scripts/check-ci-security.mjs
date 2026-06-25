@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const WORKFLOW = resolve(".github/workflows/claude-review.yml");
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const WORKFLOW = resolve(REPO_ROOT, ".github/workflows/claude-review.yml");
 const workflow = readFileSync(WORKFLOW, "utf8");
 const failures = [];
 const checkoutStep =
-  workflow.match(/^      - uses: actions\/checkout@v4\n(?:        .*\n)*/m)?.[0] ?? "";
+  workflow.match(/^      - uses: actions\/checkout@[^\s#]+\n(?:        .*\n)*/m)?.[0] ?? "";
 const installStep =
   workflow.match(/^      - name: Install frontend dependencies\n(?:        .*\n)*/m)?.[0] ?? "";
 
@@ -28,14 +30,14 @@ assertWorkflow(
 );
 
 assertWorkflow(
-  !/(^|\n)\s+cache:\s*["']?pnpm["']?\s*(?:\n|$)/.test(workflow),
+  !/(^|\n)\s+cache:\s*["']?pnpm["']?\s*(?:#.*)?(?:\n|$)/.test(workflow),
   "setup-node must not restore pnpm cache before pnpm is available",
 );
 
 assertWorkflow(
   /pnpm install\b[^\n]*--frozen-lockfile/.test(installStep) &&
-    /(^|\s)--ignore-scripts(?:\s|$)/.test(installStep) &&
-    !/(^|\s)--ignore-scripts=false(?:\s|$)/.test(installStep),
+    /(^|[\s;&|])--ignore-scripts(?=$|[\s;&|])/.test(installStep) &&
+    !/(^|[\s;&|])--ignore-scripts\s*=/.test(installStep),
   "frontend install must use pnpm install --frozen-lockfile --ignore-scripts",
 );
 

@@ -100,7 +100,10 @@ function checkNode() {
 function checkPnpm() {
   const out = tryExec("pnpm --version");
   if (!out) {
-    fail("pnpm is not installed", "Install via corepack: `corepack enable && corepack prepare pnpm@latest --activate`");
+    fail(
+      "pnpm is not installed",
+      `Install via corepack: \`corepack enable && corepack prepare pnpm@${REQUIRED_PNPM_VERSION} --activate\``,
+    );
     return;
   }
   const v = parseSemver(out);
