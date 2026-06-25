@@ -68,11 +68,16 @@ test that loads real weights or hits a live bucket.
 
 GitHub Actions enables Corepack, uses the root `packageManager` pin with its
 Corepack integrity hash, installs frontend dependencies from the repository root
-with `pnpm install --frozen-lockfile`, then runs the root `pnpm typecheck`
-script. The workflow sets `permissions: contents: read` and intentionally leaves
-pnpm caching disabled so the first pnpm-dependent command is the install step.
-Do not switch CI to `npm install` inside `apps/web/`; the web app depends on the
-workspace package via `workspace:*`, which npm does not resolve.
+with `pnpm install --frozen-lockfile --ignore-scripts`, then runs the root
+`pnpm typecheck` script. The workflow sets `permissions: contents: read`, checks
+out with `persist-credentials: false`, and intentionally leaves pnpm caching
+disabled so the first pnpm-dependent command is the install step. Do not switch
+CI to `npm install` inside `apps/web/`; the web app depends on the workspace
+package via `workspace:*`, which npm does not resolve.
+
+Run `pnpm lint:ci` after editing the workflow. It fails if checkout credentials
+are persisted, install scripts are allowed during dependency installation, or
+pnpm cache restoration is reintroduced before pnpm is available.
 
 ## Testing
 

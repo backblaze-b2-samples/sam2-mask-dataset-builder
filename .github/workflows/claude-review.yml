@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -50,9 +52,13 @@ jobs:
         if: ${{ hashFiles('apps/web/package.json') != '' }}
         run: corepack enable
 
+      - name: Check CI workflow security
+        if: ${{ hashFiles('apps/web/package.json') != '' }}
+        run: node scripts/check-ci-security.mjs
+
       - name: Install frontend dependencies
         if: ${{ hashFiles('apps/web/package.json') != '' }}
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Typecheck frontend
         if: ${{ hashFiles('apps/web/package.json') != '' }}
