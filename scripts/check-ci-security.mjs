@@ -35,7 +35,9 @@ assertWorkflow(
 
 assertWorkflow(
   checkoutSteps.length > 0 &&
-    checkoutSteps.every((step) => /persist-credentials:\s+false\b/.test(step)),
+    checkoutSteps.every((step) =>
+      /(^|\n)\s+persist-credentials:\s*["']?false["']?\s*(?:#.*)?(?:\n|$)/.test(step),
+    ),
   "checkout must set persist-credentials: false",
 );
 
