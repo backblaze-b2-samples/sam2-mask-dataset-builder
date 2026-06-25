@@ -28,12 +28,14 @@ assertWorkflow(
 );
 
 assertWorkflow(
-  !/cache:\s+pnpm\b/.test(workflow),
+  !/(^|\n)\s+cache:\s*["']?pnpm["']?\s*(?:\n|$)/.test(workflow),
   "setup-node must not restore pnpm cache before pnpm is available",
 );
 
 assertWorkflow(
-  /pnpm install\b[^\n]*--frozen-lockfile[^\n]*--ignore-scripts/.test(installStep),
+  /pnpm install\b[^\n]*--frozen-lockfile/.test(installStep) &&
+    /(^|\s)--ignore-scripts(?:\s|$)/.test(installStep) &&
+    !/(^|\s)--ignore-scripts=false(?:\s|$)/.test(installStep),
   "frontend install must use pnpm install --frozen-lockfile --ignore-scripts",
 );
 

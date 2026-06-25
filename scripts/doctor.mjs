@@ -17,11 +17,12 @@ import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ENV_FILE = resolve(REPO_ROOT, ".env");
+const PACKAGE_FILE = resolve(REPO_ROOT, "package.json");
 const VENV_UVICORN = resolve(REPO_ROOT, "services/api/.venv/bin/uvicorn");
 
 // Required minimum versions. Bump as upstream support shifts.
 const REQUIRED_NODE_MAJOR = 20;
-const REQUIRED_PNPM_MAJOR = 9;
+const REQUIRED_PNPM_VERSION = getPinnedPnpmVersion();
 const REQUIRED_PYTHON_MINOR = 11; // 3.11+
 
 // Required B2 env vars + the exact placeholder strings shipped in
@@ -72,6 +73,18 @@ function parseSemver(s) {
   return { major: +match[1], minor: +match[2], patch: +match[3] };
 }
 
+function getPinnedPnpmVersion() {
+  const pkg = JSON.parse(readFileSync(PACKAGE_FILE, "utf8"));
+  const match = pkg.packageManager?.match(/^pnpm@([^+]+)/);
+  return match?.[1] ?? "10.25.0";
+}
+
+function sameSemver(actual, expected) {
+  return actual.major === expected.major &&
+    actual.minor === expected.minor &&
+    actual.patch === expected.patch;
+}
+
 // ----- Tool versions -----
 
 function checkNode() {
@@ -91,10 +104,11 @@ function checkPnpm() {
     return;
   }
   const v = parseSemver(out);
-  if (!v || v.major < REQUIRED_PNPM_MAJOR) {
+  const required = parseSemver(REQUIRED_PNPM_VERSION);
+  if (!v || !required || !sameSemver(v, required)) {
     fail(
-      `pnpm ${out} is too old (need >= ${REQUIRED_PNPM_MAJOR})`,
-      `Run: \`corepack prepare pnpm@latest --activate\``,
+      `pnpm ${out} does not match the pinned version ${REQUIRED_PNPM_VERSION}`,
+      "Run: `corepack enable` from the repo root, then rerun the command",
     );
   }
 }
