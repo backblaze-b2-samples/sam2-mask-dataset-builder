@@ -8,8 +8,8 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const WORKFLOW = resolve(REPO_ROOT, ".github/workflows/claude-review.yml");
 const workflow = readFileSync(WORKFLOW, "utf8");
 const failures = [];
-const checkoutStep =
-  workflow.match(/^      - uses: actions\/checkout@[^\s#]+\n(?:        .*\n)*/m)?.[0] ?? "";
+const checkoutSteps =
+  workflow.match(/^      - uses: actions\/checkout@[^\s#]+\n(?:        .*\n)*/gm) ?? [];
 const installStep =
   workflow.match(/^      - name: Install frontend dependencies\n(?:        .*\n)*/m)?.[0] ?? "";
 
@@ -20,12 +20,14 @@ function assertWorkflow(condition, message) {
 }
 
 assertWorkflow(
-  /permissions:\s*\n\s+contents:\s+read\b/.test(workflow),
+  /^permissions:\s*\n  contents:\s+read\b/m.test(workflow) &&
+    !/^\s{2,}permissions:/m.test(workflow),
   "workflow must set permissions: contents: read",
 );
 
 assertWorkflow(
-  /persist-credentials:\s+false\b/.test(checkoutStep),
+  checkoutSteps.length > 0 &&
+    checkoutSteps.every((step) => /persist-credentials:\s+false\b/.test(step)),
   "checkout must set persist-credentials: false",
 );
 
@@ -37,7 +39,8 @@ assertWorkflow(
 assertWorkflow(
   /pnpm install\b[^\n]*--frozen-lockfile/.test(installStep) &&
     /(^|[\s;&|])--ignore-scripts(?=$|[\s;&|])/.test(installStep) &&
-    !/(^|[\s;&|])--ignore-scripts\s*=/.test(installStep),
+    !/(^|[\s;&|])--ignore-scripts\s*=/.test(installStep) &&
+    !/(^|[\s;&|])--ignore-scripts\s+(?![-;&|]|$)[^\s;&|]+/.test(installStep),
   "frontend install must use pnpm install --frozen-lockfile --ignore-scripts",
 );
 
