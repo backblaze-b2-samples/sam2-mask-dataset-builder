@@ -8,6 +8,13 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const WORKFLOW = resolve(REPO_ROOT, ".github/workflows/claude-review.yml");
 const workflow = readFileSync(WORKFLOW, "utf8");
 const failures = [];
+const permissionsBlock =
+  workflow.match(/^permissions:\s*\n((?:  [^\n]+\n?)*)/m)?.[1] ?? "";
+const permissionLines = permissionsBlock
+  .trimEnd()
+  .split("\n")
+  .filter(Boolean)
+  .map((line) => line.trim());
 const checkoutSteps =
   workflow.match(/^      - uses: actions\/checkout@[^\s#]+\n(?:        .*\n)*/gm) ?? [];
 const installStep =
@@ -20,9 +27,10 @@ function assertWorkflow(condition, message) {
 }
 
 assertWorkflow(
-  /^permissions:\s*\n  contents:\s+read\b/m.test(workflow) &&
+  permissionLines.length === 1 &&
+    permissionLines[0] === "contents: read" &&
     !/^\s{2,}permissions:/m.test(workflow),
-  "workflow must set permissions: contents: read",
+  "workflow must set only top-level permissions: contents: read",
 );
 
 assertWorkflow(

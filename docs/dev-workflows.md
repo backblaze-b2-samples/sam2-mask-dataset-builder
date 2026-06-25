@@ -75,9 +75,11 @@ disabled so the first pnpm-dependent command is the install step. Do not switch
 CI to `npm install` inside `apps/web/`; the web app depends on the workspace
 package via `workspace:*`, which npm does not resolve.
 
-Run `pnpm lint:ci` after editing the workflow. It fails if checkout credentials
-are persisted, install scripts are allowed during dependency installation, or
-pnpm cache restoration is reintroduced before pnpm is available.
+The workflow runs its security check inline before dependency installation so it
+does not depend on PR-modified helper scripts. Run `pnpm lint:ci` after editing
+the workflow for the same local checks: it fails if checkout credentials are
+persisted, install scripts are allowed during dependency installation, or pnpm
+cache restoration is reintroduced.
 
 ## Testing
 
