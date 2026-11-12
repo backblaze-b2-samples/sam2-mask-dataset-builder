@@ -67,7 +67,7 @@ jobs:
             .filter(Boolean)
             .map((line) => line.trim());
           const checkoutSteps =
-            workflow.match(/^      - uses: actions\/checkout@[^\s#]+\n(?:        .*\n)*/gm) ?? [];
+            workflow.match(/^      - uses: actions\/checkout@[^\s#]+(?: +#[^\n]*)?\n(?:        .*\n)*/gm) ?? [];
           const installStep =
             workflow.match(/^      - name: Install frontend dependencies\n(?:        .*\n)*/m)?.[0] ?? "";
           const failures = [];
